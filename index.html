@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlucoseAI — Blood Sugar Prediction</title>
+<style>
+  :root {
+    --bg: #f6f9fc;
+    --bg-alt: #eef3fa;
+    --navy: #0b1f3a;
+    --navy-soft: #45536b;
+    --blue: #2563eb;
+    --cyan: #06b6d4;
+    --purple: #7c6ff0;
+    --white: #ffffff;
+    --glass: rgba(255, 255, 255, 0.62);
+    --glass-border: rgba(11, 31, 58, 0.08);
+    --shadow: 0 20px 60px rgba(15, 43, 90, 0.10);
+    --shadow-sm: 0 8px 24px rgba(15, 43, 90, 0.08);
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    --radius-sm: 12px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    --danger: #dc4c4c;
+    --ok: #1a9e6b;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    font-family: var(--font);
+    color: var(--navy);
+    background:
+      radial-gradient(1100px 500px at 85% -10%, rgba(124, 111, 240, 0.14), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(6, 182, 212, 0.12), transparent 55%),
+      var(--bg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; }
+
+  img, svg { max-width: 100%; display: block; }
+
+  :focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px;
+  }
+
+  /* ---------- NAV ---------- */
+  header.nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(14px);
+    background: rgba(246, 249, 252, 0.78);
+    border-bottom: 1px solid var(--glass-border);
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+
+  .brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--blue), var(--cyan));
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .brand-text {
+    font-size: 1.18rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .brand-sub {
+    font-size: 0.8rem;
+    color: var(--navy-soft);
+    font-weight: 500;
+  }
+
+  nav.links {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    font-size: 0.93rem;
+    font-weight: 600;
+  }
+
+  nav.links a {
+    text-decoration: none;
+    color: var(--navy-soft);
+    transition: color 0.2s ease;
+  }
+
+  nav.links a:hover { color: var(--navy); }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: rgba(26, 158, 107, 0.10);
+    color: var(--ok);
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 0 3px rgba(26, 158, 107, 0.18);
+  }
+
+  .nav-toggle { display: none; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    padding: 76px 0 60px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 56px;
+    align-items: center;
+  }
+
+  .eyebrow-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--white);
+    border: 1px solid var(--glass-border);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--navy-soft);
+    margin-bottom: 22px;
+  }
+
+  h1.hero-title {
+    font-size: clamp(2.3rem, 4.4vw, 3.4rem);
+    line-height: 1.09;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+    margin: 0 0 20px;
+  }
+
+  h1.hero-title .grad {
+    background: linear-gradient(100deg, var(--blue), var(--cyan) 60%, var(--purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero-desc {
+    font-size: 1.08rem;
+    color: var(--navy-soft);
+    max-width: 480px;
+    margin: 0 0 32px;
+  }
+
+  .hero-ctas { display: flex; gap: 14px; margin-bottom: 40px; }
+
+  .stat-row {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 13px 18px;
+    border-radius: var(--radius-sm);
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-sm);
+    min-width: 128px;
+  }
+
+  .stat-chip strong { font-size: 0.95rem; }
+  .stat-chip span { font-size: 0.76rem; color: var(--navy-soft); }
+
+  /* Hero visual */
+  .hero-visual {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-visual svg { width: 100%; height: auto; }
+
+  /* Buttons */
+  .btn {
+    appearance: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.95rem;
+    border-radius: 999px;
+    padding: 14px 26px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.2s ease;
+  }
+
+  .btn-primary {
+    color: white;
+    background: linear-gradient(100deg, var(--blue), var(--cyan));
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.30);
+  }
+
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(37, 99, 235, 0.38); }
+  .btn-primary:active { transform: translateY(0); }
+
+  .btn-primary:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-ghost {
+    background: var(--white);
+    border: 1px solid var(--glass-border);
+    color: var(--navy);
+  }
+
+  .btn-ghost:hover { background: var(--bg-alt); }
+
+  .btn-arrow { transition: transform 0.18s ease; }
+  .btn-primary:hover .btn-arrow { transform: translateX(3px); }
+
+  /* ---------- SECTIONS ---------- */
+  section { padding: 64px 0; }
+
+  .section-head {
+    max-width: 620px;
+    margin: 0 0 40px;
+  }
+
+  .section-head h2 {
+    font-size: clamp(1.7rem, 2.6vw, 2.2rem);
+    letter-spacing: -0.015em;
+    margin: 0 0 12px;
+    font-weight: 800;
+  }
+
+  .section-head p {
+    color: var(--navy-soft);
+    font-size: 1.02rem;
+    margin: 0;
+  }
+
+  /* ---------- GLASS CARD (prediction) ---------- */
+  .predict-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 44px;
+    backdrop-filter: blur(18px);
+  }
+
+  .predict-head { margin-bottom: 32px; }
+  .predict-head h2 { margin: 0 0 8px; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.01em; }
+  .predict-head p { margin: 0; color: var(--navy-soft); }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 22px 26px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  .field.span-2 { grid-column: span 2; }
+
+  .field label {
+    font-size: 0.87rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  .input-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-shell input[type="number"],
+  .input-shell input[type="text"] {
+    width: 100%;
+    font-family: inherit;
+    font-size: 0.97rem;
+    color: var(--navy);
+    padding: 13px 16px;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--glass-border);
+    background: rgba(255, 255, 255, 0.85);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .input-shell input:hover { border-color: rgba(37, 99, 235, 0.35); }
+
+  .input-shell input:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+  }
+
+  .input-shell .unit {
+    position: absolute;
+    right: 15px;
+    font-size: 0.8rem;
+    color: var(--navy-soft);
+    font-weight: 600;
+    pointer-events: none;
+  }
+
+  .field.has-unit input { padding-right: 62px; }
+
+  .field-error {
+    font-size: 0.78rem;
+    color: var(--danger);
+    min-height: 15px;
+    font-weight: 600;
+  }
+
+  .field.invalid input { border-color: var(--danger); box-shadow: 0 0 0 4px rgba(220, 76, 76, 0.10); }
+
+  /* range slider */
+  .range-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--cyan), var(--blue));
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--blue);
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4);
+    cursor: pointer;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--blue);
+    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.4);
+    cursor: pointer;
+  }
+
+  .range-value {
+    min-width: 42px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--blue);
+    background: rgba(37, 99, 235, 0.09);
+    border-radius: 10px;
+    padding: 6px 0;
+  }
+
+  /* segmented toggle */
+  .segmented {
+    display: inline-flex;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    background: rgba(11, 31, 58, 0.05);
+    border: 1px solid var(--glass-border);
+    width: fit-content;
+  }
+
+  .segmented button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 0.88rem;
+    padding: 9px 24px;
+    border-radius: 9px;
+    color: var(--navy-soft);
+    cursor: pointer;
+    transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .segmented button.active {
+    background: white;
+    color: var(--blue);
+    box-shadow: 0 4px 12px rgba(15, 43, 90, 0.12);
+  }
+
+  .predict-actions {
+    margin-top: 34px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .spinner {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2.5px solid rgba(255, 255, 255, 0.5);
+    border-top-color: white;
+    animation: spin 0.75s linear infinite;
+    display: none;
+  }
+
+  .btn-primary.loading .spinner { display: inline-block; }
+  .btn-primary.loading .btn-label-text::after { content: "Predicting…"; }
+  .btn-primary.loading .btn-label-default { display: none; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .form-note {
+    font-size: 0.83rem;
+    color: var(--navy-soft);
+  }
+
+  .api-error {
+    display: none;
+    margin-top: 18px;
+    padding: 13px 16px;
+    border-radius: var(--radius-sm);
+    background: rgba(220, 76, 76, 0.08);
+    border: 1px solid rgba(220, 76, 76, 0.25);
+    color: var(--danger);
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  /* ---------- RESULT ---------- */
+  .result-card {
+    margin-top: 30px;
+    border-radius: var(--radius-lg);
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(124, 111, 240, 0.08));
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    display: none;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .result-card.visible { display: block; }
+  .result-card.show { opacity: 1; transform: translateY(0); }
+
+  .result-top {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 36px;
+    align-items: center;
+  }
+
+  .result-top h3 {
+    margin: 0 0 6px;
+    font-size: 1.3rem;
+    font-weight: 800;
+  }
+
+  .result-value {
+    font-size: clamp(2.6rem, 5vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(100deg, var(--blue), var(--purple));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    line-height: 1;
+    margin: 10px 0 6px;
+  }
+
+  .result-label { color: var(--navy-soft); font-size: 0.92rem; font-weight: 600; }
+
+  .result-interp {
+    margin-top: 18px;
+    font-size: 0.97rem;
+    color: var(--navy);
+  }
+
+  .result-disclaimer {
+    margin-top: 14px;
+    font-size: 0.8rem;
+    color: var(--navy-soft);
+    border-left: 3px solid var(--purple);
+    padding-left: 12px;
+  }
+
+  .result-note {
+    margin-top: 10px;
+    font-size: 0.8rem;
+    color: var(--navy-soft);
+    font-style: italic;
+  }
+
+  /* gauge */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+  .gauge-track {
+    width: 100%;
+    max-width: 260px;
+    height: 14px;
+    border-radius: 999px;
+    background: rgba(11, 31, 58, 0.08);
+    overflow: hidden;
+    position: relative;
+  }
+
+  .gauge-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--cyan), var(--blue), var(--purple));
+    width: 0%;
+    transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .gauge-scale {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 260px;
+    font-size: 0.72rem;
+    color: var(--navy-soft);
+    font-weight: 600;
+  }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+
+  .step-card {
+    background: var(--white);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-md);
+    padding: 30px 26px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .step-num {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--blue);
+    background: rgba(37, 99, 235, 0.09);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+
+  .step-card h3 { margin: 0 0 8px; font-size: 1.08rem; font-weight: 800; }
+  .step-card p { margin: 0; color: var(--navy-soft); font-size: 0.92rem; }
+
+  /* ---------- MODEL INFO ---------- */
+  .model-panel {
+    background: linear-gradient(135deg, var(--navy) 0%, #142a4d 100%);
+    border-radius: var(--radius-lg);
+    padding: 42px;
+    color: white;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .model-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(500px 260px at 90% 0%, rgba(124, 111, 240, 0.35), transparent 60%);
+    pointer-events: none;
+  }
+
+  .model-panel h2 { margin: 0 0 6px; font-size: 1.5rem; font-weight: 800; position: relative; }
+  .model-panel > p { margin: 0 0 30px; color: rgba(255,255,255,0.65); font-size: 0.92rem; position: relative; }
+
+  .model-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    position: relative;
+  }
+
+  .model-stat {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    padding: 18px 20px;
+  }
+
+  .model-stat span { display: block; font-size: 0.76rem; color: rgba(255,255,255,0.6); font-weight: 600; margin-bottom: 6px; }
+  .model-stat strong { font-size: 1.18rem; font-weight: 800; }
+
+  .model-panel-footnote {
+    margin-top: 22px;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.5);
+    position: relative;
+  }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    border-top: 1px solid var(--glass-border);
+    padding: 34px 0 44px;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .footer-inner p { margin: 0; font-size: 0.85rem; color: var(--navy-soft); }
+  .footer-inner .foot-brand { font-weight: 800; color: var(--navy); }
+  .footer-tag {
+    font-size: 0.78rem;
+    color: var(--navy-soft);
+    background: var(--bg-alt);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+
+  /* fade-in on scroll */
+  .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .reveal.in { opacity: 1; transform: translateY(0); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-visual { order: -1; max-width: 380px; margin: 0 auto; }
+    .steps-grid { grid-template-columns: 1fr; }
+    .model-grid { grid-template-columns: repeat(2, 1fr); }
+    .result-top { grid-template-columns: 1fr; }
+    .gauge-wrap { align-items: stretch; }
+    .gauge-track, .gauge-scale { max-width: none; }
+  }
+
+  @media (max-width: 720px) {
+    nav.links { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .field.span-2 { grid-column: span 1; }
+    .predict-card { padding: 28px 22px; }
+    .model-panel { padding: 30px 22px; }
+    .model-grid { grid-template-columns: 1fr; }
+    .wrap { padding: 0 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2C12 2 5 10.5 5 15.5C5 19.6421 8.35786 23 12.5 23C16.6421 23 20 19.6421 20 15.5C20 10.9 14.5 4.5 12.5 2.2" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,255,255,0.18)"/>
+        </svg>
+      </span>
+      <span class="brand-text">GlucoseAI</span>
+      <span class="brand-sub">Blood Sugar Prediction</span>
+    </div>
+    <nav class="links" aria-label="Primary">
+      <a href="#predict">Prediction</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="#about">About</a>
+    </nav>
+    <span class="status-badge"><span class="status-dot" aria-hidden="true"></span>ML Model Online</span>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow-badge">Machine Learning · Healthcare</span>
+        <h1 class="hero-title">Predict Blood Sugar<br><span class="grad">with Machine Learning</span></h1>
+        <p class="hero-desc">Enter a few health and lifestyle parameters to generate an AI-powered blood sugar prediction.</p>
+        <div class="hero-ctas">
+          <a href="#predict" class="btn btn-primary">Start Prediction <span class="btn-arrow" aria-hidden="true">→</span></a>
+          <a href="#how-it-works" class="btn btn-ghost">How it works</a>
+        </div>
+        <div class="stat-row">
+          <div class="stat-chip"><strong>8</strong><span>Input Features</span></div>
+          <div class="stat-chip"><strong>Linear Regression</strong><span>Model Type</span></div>
+          <div class="stat-chip"><strong>Real-Time</strong><span>Prediction</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <svg viewBox="0 0 420 420" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="55%" stop-color="#06b6d4"/>
+              <stop offset="100%" stop-color="#7c6ff0"/>
+            </linearGradient>
+            <linearGradient id="dropGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#2563eb"/>
+              <stop offset="100%" stop-color="#06b6d4"/>
+            </linearGradient>
+          </defs>
+
+          <circle cx="210" cy="210" r="170" fill="url(#ringGrad)" opacity="0.07"/>
+          <circle cx="210" cy="210" r="132" fill="none" stroke="url(#ringGrad)" stroke-width="1.5" stroke-dasharray="4 8" opacity="0.5"/>
+
+          <g transform="translate(210,196)">
+            <path d="M0 -62C0 -62 -46 -6 -46 28C-46 55 -25.4 76 0 76C25.4 76 46 55 46 28C46 -6 0 -62 0 -62Z"
+                  fill="url(#dropGrad)" opacity="0.92"/>
+            <path d="M-20 30C-20 44 -9 54 4 52" stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.55" fill="none"/>
+          </g>
+
+          <g stroke="#0b1f3a" stroke-width="2.2" fill="none" opacity="0.55" stroke-linejoin="round" stroke-linecap="round">
+            <path d="M40 250 L95 250 L112 220 L132 285 L150 235 L164 250 L210 250"/>
+          </g>
+
+          <circle cx="330" cy="120" r="26" fill="white" opacity="0.9"/>
+          <text x="330" y="128" text-anchor="middle" font-family="inherit" font-size="18" font-weight="800" fill="#2563eb">mg</text>
+
+          <circle cx="96" cy="330" r="21" fill="white" opacity="0.9"/>
+          <path d="M88 330 l6 6 l12 -14" stroke="#1a9e6b" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,-4)"/>
+
+          <circle cx="70" cy="95" r="5" fill="#7c6ff0" opacity="0.7"/>
+          <circle cx="350" cy="300" r="6" fill="#06b6d4" opacity="0.6"/>
+          <circle cx="360" cy="200" r="4" fill="#2563eb" opacity="0.6"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDICTION -->
+  <section id="predict">
+    <div class="wrap">
+      <div class="predict-card reveal">
+        <div class="predict-head">
+          <h2>Patient Information</h2>
+          <p>Enter the following values to generate a prediction.</p>
+        </div>
+
+        <form id="predict-form" novalidate>
+          <div class="form-grid">
+
+            <div class="field has-unit" data-field="Age">
+              <label for="age">Age</label>
+              <div class="input-shell">
+                <input type="number" id="age" name="Age" placeholder="Enter age" inputmode="numeric" min="0" step="1">
+                <span class="unit">years</span>
+              </div>
+              <span class="field-error" id="err-Age"></span>
+            </div>
+
+            <div class="field" data-field="BMI">
+              <label for="bmi">Body Mass Index (BMI)</label>
+              <div class="input-shell">
+                <input type="number" id="bmi" name="BMI" placeholder="e.g. 23.5" step="0.1" min="0">
+              </div>
+              <span class="field-error" id="err-BMI"></span>
+            </div>
+
+            <div class="field has-unit" data-field="Physical_Activity_Min">
+              <label for="activity">Physical Activity</label>
+              <div class="input-shell">
+                <input type="number" id="activity" name="Physical_Activity_Min" placeholder="e.g. 30" min="0" step="1">
+                <span class="unit">min/day</span>
+              </div>
+              <span class="field-error" id="err-Physical_Activity_Min"></span>
+            </div>
+
+            <div class="field has-unit" data-field="Sleep_Hours">
+              <label for="sleep">Sleep Duration</label>
+              <div class="input-shell">
+                <input type="number" id="sleep" name="Sleep_Hours" placeholder="e.g. 7" min="0" max="24" step="0.5">
+                <span class="unit">hours</span>
+              </div>
+              <span class="field-error" id="err-Sleep_Hours"></span>
+            </div>
+
+            <div class="field span-2" data-field="Stress_Level">
+              <label for="stress">Stress Level</label>
+              <div class="range-row">
+                <input type="range" id="stress" name="Stress_Level" min="1" max="10" step="1" value="5">
+                <span class="range-value" id="stress-value">5</span>
+              </div>
+              <span class="field-error" id="err-Stress_Level"></span>
+            </div>
+
+            <div class="field has-unit" data-field="Daily_Carb_Intake_g">
+              <label for="carbs">Daily Carb Intake</label>
+              <div class="input-shell">
+                <input type="number" id="carbs" name="Daily_Carb_Intake_g" placeholder="e.g. 200" min="0" step="1">
+                <span class="unit">g/day</span>
+              </div>
+              <span class="field-error" id="err-Daily_Carb_Intake_g"></span>
+            </div>
+
+            <div class="field" data-field="Family_History">
+              <label id="family-history-label">Family History</label>
+              <div class="segmented" role="radiogroup" aria-labelledby="family-history-label">
+                <button type="button" class="active" data-value="0" role="radio" aria-checked="true">No</button>
+                <button type="button" data-value="1" role="radio" aria-checked="false">Yes</button>
+              </div>
+              <input type="hidden" id="family-history" name="Family_History" value="0">
+              <span class="field-error" id="err-Family_History"></span>
+            </div>
+
+            <div class="field has-unit" data-field="Previous_Glucose">
+              <label for="prev-glucose">Previous Glucose</label>
+              <div class="input-shell">
+                <input type="number" id="prev-glucose" name="Previous_Glucose" placeholder="e.g. 95" min="0" step="0.1">
+                <span class="unit">mg/dL</span>
+              </div>
+              <span class="field-error" id="err-Previous_Glucose"></span>
+            </div>
+
+          </div>
+
+          <div class="predict-actions">
+            <button type="submit" class="btn btn-primary" id="predict-btn">
+              <span class="spinner" aria-hidden="true"></span>
+              <span class="btn-label-default">Predict Blood Sugar</span>
+              <span class="btn-label-text"></span>
+              <span class="btn-arrow btn-label-default" aria-hidden="true">→</span>
+            </button>
+            <span class="form-note">Estimates are generated by a trained regression model, not a clinician.</span>
+          </div>
+
+          <div class="api-error" id="api-error" role="alert"></div>
+        </form>
+
+        <div class="result-card" id="result-card" aria-live="polite">
+          <div class="result-top">
+            <div>
+              <h3>Prediction Result</h3>
+              <div class="result-value" id="result-value">— mg/dL</div>
+              <div class="result-label">Predicted Blood Sugar</div>
+              <p class="result-interp" id="result-interp"></p>
+              <p class="result-disclaimer">This tool is an educational machine-learning project and is not intended for medical diagnosis or treatment.</p>
+              <p class="result-note">Prediction generated by the trained Linear Regression model.</p>
+            </div>
+            <div class="gauge-wrap">
+              <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+              <div class="gauge-scale"><span>40</span><span>110</span><span>180+</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how-it-works">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <h2>How it works</h2>
+        <p>A straightforward, three-stage pipeline connects your inputs to a prediction.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card reveal">
+          <div class="step-num">01</div>
+          <h3>Enter Data</h3>
+          <p>User enters health and lifestyle information.</p>
+        </div>
+        <div class="step-card reveal">
+          <div class="step-num">02</div>
+          <h3>ML Processing</h3>
+          <p>The Flask backend sends the inputs to the trained Linear Regression model.</p>
+        </div>
+        <div class="step-card reveal">
+          <div class="step-num">03</div>
+          <h3>Prediction</h3>
+          <p>The model returns the predicted blood sugar value.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODEL INFO -->
+  <section id="about">
+    <div class="wrap">
+      <div class="model-panel reveal">
+        <h2>Model information</h2>
+        <p>Test-set evaluation results for the underlying model.</p>
+        <div class="model-grid">
+          <div class="model-stat"><span>Model</span><strong>Linear Regression</strong></div>
+          <div class="model-stat"><span>Input Features</span><strong>8</strong></div>
+          <div class="model-stat"><span>Target</span><strong>Blood Sugar (mg/dL)</strong></div>
+          <div class="model-stat"><span>R² Score</span><strong>0.8751</strong></div>
+          <div class="model-stat"><span>MAE</span><strong>4.02 mg/dL</strong></div>
+          <div class="model-stat"><span>RMSE</span><strong>5.11 mg/dL</strong></div>
+        </div>
+        <p class="model-panel-footnote">Metrics reflect performance on a held-out test set and do not guarantee accuracy for any individual case.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-inner">
+    <div>
+      <p><span class="foot-brand">GlucoseAI</span> — Blood Sugar Level Prediction</p>
+      <p>Built with Python, Flask &amp; Machine Learning</p>
+    </div>
+    <span class="footer-tag">Educational Project • Not a Medical Device</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Scroll reveal ----------
+  var revealEls = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in");
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12 });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add("in"); });
+  }
+
+  // ---------- Stress slider ----------
+  var stressInput = document.getElementById("stress");
+  var stressValue = document.getElementById("stress-value");
+  stressInput.addEventListener("input", function () {
+    stressValue.textContent = stressInput.value;
+  });
+
+  // ---------- Segmented toggle (Family History) ----------
+  var segButtons = document.querySelectorAll(".segmented button");
+  var familyHistoryInput = document.getElementById("family-history");
+  segButtons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      segButtons.forEach(function (b) {
+        b.classList.remove("active");
+        b.setAttribute("aria-checked", "false");
+      });
+      btn.classList.add("active");
+      btn.setAttribute("aria-checked", "true");
+      familyHistoryInput.value = btn.getAttribute("data-value");
+    });
+  });
+
+  // ---------- Validation ----------
+  var form = document.getElementById("predict-form");
+  var predictBtn = document.getElementById("predict-btn");
+  var apiError = document.getElementById("api-error");
+  var resultCard = document.getElementById("result-card");
+  var resultValue = document.getElementById("result-value");
+  var resultInterp = document.getElementById("result-interp");
+  var gaugeFill = document.getElementById("gauge-fill");
+
+  function setError(field, message) {
+    var errEl = document.getElementById("err-" + field);
+    var wrapEl = document.querySelector('[data-field="' + field + '"]');
+    if (errEl) errEl.textContent = message || "";
+    if (wrapEl) wrapEl.classList.toggle("invalid", !!message);
+  }
+
+  function clearErrors() {
+    ["Age", "BMI", "Physical_Activity_Min", "Sleep_Hours", "Stress_Level",
+     "Daily_Carb_Intake_g", "Family_History", "Previous_Glucose"].forEach(function (f) {
+      setError(f, "");
+    });
+    apiError.style.display = "none";
+    apiError.textContent = "";
+  }
+
+  function validate(values) {
+    var valid = true;
+
+    if (!(values.Age > 0)) { setError("Age", "Age must be a positive number."); valid = false; }
+    if (!(values.BMI > 0)) { setError("BMI", "BMI must be a positive number."); valid = false; }
+    if (!(values.Physical_Activity_Min >= 0)) { setError("Physical_Activity_Min", "Physical activity cannot be negative."); valid = false; }
+    if (!(values.Sleep_Hours >= 0 && values.Sleep_Hours <= 24)) { setError("Sleep_Hours", "Sleep hours must be between 0 and 24."); valid = false; }
+    if (!(values.Stress_Level >= 1 && values.Stress_Level <= 10)) { setError("Stress_Level", "Stress level must be between 1 and 10."); valid = false; }
+    if (!(values.Daily_Carb_Intake_g >= 0)) { setError("Daily_Carb_Intake_g", "Carb intake cannot be negative."); valid = false; }
+    if (values.Family_History !== 0 && values.Family_History !== 1) { setError("Family_History", "Please select an option."); valid = false; }
+    if (!(values.Previous_Glucose > 0)) { setError("Previous_Glucose", "Previous glucose must be a positive number."); valid = false; }
+
+    return valid;
+  }
+
+  function readValues() {
+    return {
+      Age: parseFloat(document.getElementById("age").value),
+      BMI: parseFloat(document.getElementById("bmi").value),
+      Physical_Activity_Min: parseFloat(document.getElementById("activity").value),
+      Sleep_Hours: parseFloat(document.getElementById("sleep").value),
+      Stress_Level: parseFloat(document.getElementById("stress").value),
+      Daily_Carb_Intake_g: parseFloat(document.getElementById("carbs").value),
+      Family_History: parseInt(document.getElementById("family-history").value, 10),
+      Previous_Glucose: parseFloat(document.getElementById("prev-glucose").value)
+    };
+  }
+
+  function interpretation(value) {
+    return "Your predicted value is " + value.toFixed(2) + " mg/dL.";
+  }
+
+  function updateGauge(value) {
+    // Map an approximate 40–220 mg/dL range onto the gauge width.
+    var min = 40, max = 220;
+    var pct = ((value - min) / (max - min)) * 100;
+    pct = Math.max(4, Math.min(100, pct));
+    requestAnimationFrame(function () {
+      gaugeFill.style.width = pct + "%";
+    });
+  }
+
+  function setLoading(isLoading) {
+    predictBtn.disabled = isLoading;
+    predictBtn.classList.toggle("loading", isLoading);
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    var values = readValues();
+    if (!validate(values)) {
+      return;
+    }
+
+    setLoading(true);
+
+    fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values)
+    })
+      .then(function (response) {
+        return response.json().then(function (data) {
+          return { ok: response.ok, data: data };
+        });
+      })
+      .then(function (result) {
+        setLoading(false);
+
+        if (!result.ok || !result.data || result.data.success === false) {
+          var msg = (result.data && result.data.error) ? result.data.error : "Something went wrong while generating the prediction.";
+          apiError.textContent = msg;
+          apiError.style.display = "block";
+          return;
+        }
+
+        var prediction = result.data.prediction;
+        resultValue.textContent = prediction.toFixed(2) + " mg/dL";
+        resultInterp.textContent = interpretation(prediction);
+        updateGauge(prediction);
+
+        resultCard.classList.add("visible");
+        requestAnimationFrame(function () {
+          resultCard.classList.add("show");
+          resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      })
+      .catch(function () {
+        setLoading(false);
+        apiError.textContent = "Network error: could not reach the prediction server. Please try again.";
+        apiError.style.display = "block";
+      });
+  });
+})();
+</script>
+
+</body>
+</html>
